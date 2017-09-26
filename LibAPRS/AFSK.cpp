@@ -13,7 +13,9 @@ Afsk *AFSK_modem;
 
 
 // Forward declerations
+#ifndef APRS_DISABLE_RX
 int afsk_getchar(void);
+#endif
 void afsk_putchar(char c);
 
 void AFSK_hw_refDetect(void) {
@@ -65,14 +67,18 @@ void AFSK_init(Afsk *afsk) {
     afsk->dataRate = 1200;
     afsk->phaseInc = MARK_INC_1200;
     // Initialise FIFO buffers
+#ifndef APRS_DISABLE_RX
     fifo_init(&afsk->delayFifo, (uint8_t *)afsk->delayBuf, sizeof(afsk->delayBuf));
     fifo_init(&afsk->rxFifo, afsk->rxBuf, sizeof(afsk->rxBuf));
+#endif
     fifo_init(&afsk->txFifo, afsk->txBuf, sizeof(afsk->txBuf));
 
+#ifndef APRS_DISABLE_RX
     // Fill delay FIFO with zeroes
     for (int i = 0; i<SAMPLESPERBIT_300 / 2; i++) {
         fifo_push(&afsk->delayFifo, 0);
     }
+#endif
 
     AFSK_hw_init();
 }
@@ -102,6 +108,7 @@ void afsk_putchar(char c) {
     fifo_push_locked(&AFSK_modem->txFifo, c);
 }
 
+#ifndef APRS_DISABLE_RX
 int afsk_getchar(void) {
     if (fifo_isempty_locked(&AFSK_modem->rxFifo)) {
         return EOF;
@@ -109,6 +116,7 @@ int afsk_getchar(void) {
         return fifo_pop_locked(&AFSK_modem->rxFifo);
     }
 }
+#endif
 
 void AFSK_transmit(char *buffer, size_t size) {
     fifo_flush(&AFSK_modem->txFifo);
@@ -179,6 +187,7 @@ uint8_t AFSK_dac_isr(Afsk *afsk) {
     return sinSample(afsk->phaseAcc);
 }
 
+#ifndef APRS_DISABLE_RX
 static bool hdlcParse(Hdlc *hdlc, bool bit, FIFOBuffer *fifo) {
     // Initialise a return value. We start with the
     // assumption that all is going to end well :)
@@ -323,8 +332,10 @@ static bool hdlcParse(Hdlc *hdlc, bool bit, FIFOBuffer *fifo) {
     //digitalWrite(13, LOW);
     return ret;
 }
+#endif
 
 
+#ifndef APRS_DISABLE_RX
 void AFSK_adc_isr(Afsk *afsk, int8_t currentSample) {
     // To determine the received frequency, and thereby
     // the bit of the sample, we multiply the sample by
@@ -459,21 +470,29 @@ void AFSK_adc_isr(Afsk *afsk, int8_t currentSample) {
     }
 
 }
+#endif
 
+#ifndef APRS_DISABLE_RX
 extern void APRS_poll();
 uint8_t poll_timer = 0;
+#endif
+
 ISR(ADC_vect) {
     TIFR1 = _BV(ICF1);
+#ifndef APRS_DISABLE_RX
     AFSK_adc_isr(AFSK_modem, ((int16_t)((ADC) >> 2) - 128));
+#endif
     if (hw_afsk_dac_isr) {
         DAC_PORT = (AFSK_dac_isr(AFSK_modem) & 0xF0) | _BV(3);
     } else {
         DAC_PORT = 128;
     }
 
+#ifndef APRS_DISABLE_RX
     poll_timer++;
     if (poll_timer > 3) {
         poll_timer = 0;
         APRS_poll();
     }
+#endif
 }

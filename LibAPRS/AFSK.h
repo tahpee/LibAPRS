@@ -99,6 +99,7 @@ typedef struct Afsk
     volatile bool sending;                  // Set when modem is sending
 
     // Demodulation values
+#ifndef APRS_DISABLE_RX
     FIFOBuffer delayFifo;                   // Delayed FIFO for frequency discrimination
     int8_t delayBuf[SAMPLESPERBIT_300 / 2 + 1]; // Actual data storage for said FIFO
 
@@ -111,6 +112,7 @@ typedef struct Afsk
     uint8_t sampledBits;                    // Bits sampled by the demodulator (at ADC speed)
     int16_t currentPhase;                   // Current phase of the demodulator
     uint8_t actualBits;                     // Actual found bits at correct bitrate
+#endif
 
     volatile int status;                    // Status of the modem, 0 means OK
     uint16_t dataRate;                      // Data rate for the modem
@@ -136,10 +138,14 @@ typedef struct Afsk
 
 void AFSK_init(Afsk *afsk);
 void AFSK_transmit(char *buffer, size_t size);
+#ifndef APRS_DISABLE_RX
 void AFSK_poll(Afsk *afsk);
+#endif
 void AFSK_setDataRate(Afsk *afsk, uint16_t rate);
 
 void afsk_putchar(char c);
+#ifndef APRS_DISABLE_RX
 int afsk_getchar(void);
+#endif
 
 #endif

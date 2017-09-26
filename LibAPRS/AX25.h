@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include "device.h"
+#include "constants.h"
 
 #define AX25_MIN_FRAME_LEN 18
 #ifndef CUSTOM_FRAME_SIZE
@@ -20,7 +21,9 @@
 struct AX25Ctx;     // Forward declarations
 struct AX25Msg;
 
+#ifndef APRS_DISABLE_RX
 typedef void (*ax25_callback_t)(struct AX25Msg *msg);
+#endif
 
 typedef struct AX25Ctx {
     uint8_t buf[AX25_MAX_FRAME_LEN];
@@ -28,7 +31,9 @@ typedef struct AX25Ctx {
     size_t frame_len;
     uint16_t crc_in;
     uint16_t crc_out;
+#ifndef APRS_DISABLE_RX
     ax25_callback_t hook;
+#endif
     bool sync;
     bool escape;
 } AX25Ctx;
@@ -62,9 +67,13 @@ void ax25_sendVia(AX25Ctx *ctx, const AX25Call *path, size_t path_len, const voi
 #define ax25_send(ctx, dst, src, buf, len) ax25_sendVia(ctx, ({static AX25Call __path[]={dst, src}; __path;}), 2, buf, len)
 
 
-
+#ifndef APRS_DISABLE_RX
 void ax25_poll(AX25Ctx *ctx);
+#endif
 void ax25_sendRaw(AX25Ctx *ctx, void *_buf, size_t len);
-void ax25_init(AX25Ctx *ctx, ax25_callback_t hook);
+void ax25_init(AX25Ctx *ctx);
+#ifndef APRS_DISABLE_RX
+void ax25_set_callback(AX25Ctx *ctx, ax25_callback_t hook);
+#endif
 
 #endif

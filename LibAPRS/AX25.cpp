@@ -7,6 +7,7 @@
 #include "HDLC.h"
 #include "CRC-CCIT.h"
 #include "AFSK.h"
+#include "constants.h"
 
 #define countof(a) sizeof(a)/sizeof(a[0])
 #define MIN(a,b) ({ typeof(a) _a = (a); typeof(b) _b = (b); ((typeof(_a))((_a < _b) ? _a : _b)); })
@@ -17,12 +18,18 @@ extern int LibAPRS_vref;
 extern bool LibAPRS_open_squelch;
 
 
-void ax25_init(AX25Ctx *ctx, ax25_callback_t hook) {
+void ax25_init(AX25Ctx *ctx) {
     memset(ctx, 0, sizeof(*ctx));
-    ctx->hook = hook;
     ctx->crc_in = ctx->crc_out = CRC_CCIT_INIT_VAL;
 }
 
+#ifndef APRS_DISABLE_RX
+void ax25_set_callback(AX25Ctx *ctx, ax25_callback_t hook) {
+    ctx->hook = hook;
+}
+#endif
+
+#ifndef APRS_DISABLE_RX
 static void ax25_decode(AX25Ctx *ctx) {
     AX25Msg msg;
     uint8_t *buf = ctx->buf;
@@ -57,7 +64,9 @@ static void ax25_decode(AX25Ctx *ctx) {
     }   
 
 }
+#endif
 
+#ifndef APRS_DISABLE_RX
 void ax25_poll(AX25Ctx *ctx) {
     int c;
 
@@ -98,6 +107,7 @@ void ax25_poll(AX25Ctx *ctx) {
         ctx->escape = false;
     }
 }
+#endif
 
 static void ax25_putchar(AX25Ctx *ctx, uint8_t c)
 {

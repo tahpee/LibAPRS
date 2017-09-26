@@ -1,10 +1,13 @@
 #include "Arduino.h"
 #include "AFSK.h"
 #include "AX25.h"
+#include "constants.h"
 
 Afsk modem;
 AX25Ctx AX25;
+#ifndef APRS_DISABLE_RX
 extern void aprs_msg_callback(struct AX25Msg *msg);
+#endif
 #define countof(a) sizeof(a)/sizeof(a[0])
 
 int LibAPRS_vref = REF_3V3;
@@ -61,12 +64,17 @@ void APRS_init(int reference, bool open_squelch) {
     LibAPRS_open_squelch = open_squelch;
 
     AFSK_init(&modem);
-    ax25_init(&AX25, aprs_msg_callback);
+    ax25_init(&AX25);
+#ifndef APRS_DISABLE_RX
+    ax25_set_callback(&AX25, aprs_msg_callback);
+#endif
 }
 
+#ifndef APRS_DISABLE_RX
 void APRS_poll(void) {
     ax25_poll(&AX25);
 }
+#endif
 
 void APRS_setDataRate300() {
     AFSK_setDataRate(&modem, 300);
