@@ -391,11 +391,6 @@ uint8_t APRS_sendLoc_mice(void *_buffer, size_t length) {
     memcpy(path2.call, PATH2, 6);
     path2.ssid = PATH2_SSID;
 
-    for (int i=0; i<6; i++) {
-        Serial.print((char)DST[i]);
-    }
-
-
     path[0] = dst;
     path[1] = src;
     path[2] = path1;
